@@ -35,7 +35,10 @@ spec:
         - master2
         - master3
     kube_worker:
-      hosts: []
+      hosts:
+        - master1
+        - master2
+        - master3
     etcd:
       hosts:
         - master1
