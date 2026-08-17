@@ -106,7 +106,7 @@ spec:
 
 ```bash
 # Optional: Clean any previous incomplete install
-./kk delete cluster -f config-sample.yaml --force
+./kk delete cluster --config config-sample.yaml
 
 # Launch 3-Node HA cluster installation
 ./kk create cluster --config config-sample.yaml
