@@ -1,35 +1,33 @@
 # 04 - Ingress & SSL (Traefik & Let's Encrypt)
 
-This guide covers deploying [Traefik](https://doc.traefik.io/traefik/) as the Kubernetes Ingress Controller and [cert-manager](https://cert-manager.io/) with [Let's Encrypt](https://letsencrypt.org/) for automated TLS certificate provisioning and renewal.
+This guide covers deploying [Traefik](https://doc.traefik.io/traefik/) as the Kubernetes Ingress Controller and [cert-manager](https://cert-manager.io/) with [Let's Encrypt](https://letsencrypt.org/) for automated TLS certificate management directly from official sources.
 
 ---
 
-### 1. Deploy Traefik Ingress Controller
+### 1. Deploy Official Traefik Ingress Controller
 
-Follows the [Traefik Kubernetes Ingress Guide](https://doc.traefik.io/traefik/providers/kubernetes-ingress/):
+According to the [Traefik Official Kubernetes Installation Guide](https://doc.traefik.io/traefik/getting-started/install-traefik/#use-the-helm-chart):
 
 ```bash
-# Add Traefik Helm repository
+# Add official Traefik Labs repository
 helm repo add traefik https://traefik.github.io/charts
 helm repo update
 
-# Deploy Traefik
+# Install Traefik in dedicated namespace
 helm install traefik traefik/traefik \
   --namespace traefik \
-  --create-namespace \
-  --set ports.web.port=80 \
-  --set ports.websecure.port=443
+  --create-namespace
 
-# Verify Traefik pods & services
+# Verify Traefik pods & service
 kubectl get pods -n traefik
 kubectl get svc -n traefik
 ```
 
 ---
 
-### 2. Deploy cert-manager (For Let's Encrypt SSL)
+### 2. Deploy Official cert-manager (For Let's Encrypt SSL)
 
-Follows the [cert-manager Installation Guide](https://cert-manager.io/docs/installation/helm/):
+According to the [cert-manager Official Installation Guide](https://cert-manager.io/docs/installation/helm/):
 
 ```bash
 # Add Jetstack repository
@@ -50,9 +48,9 @@ kubectl get pods -n cert-manager
 
 ### 3. Create Let's Encrypt Production ClusterIssuer
 
-Follows [cert-manager ACME HTTP-01 Issuer Guide](https://cert-manager.io/docs/configuration/acme/http01/):
+According to [cert-manager ACME HTTP-01 Configuration](https://cert-manager.io/docs/configuration/acme/http01/):
 
-Create `cluster-issuer.yaml` (replace `your-email@example.com` with your real email):
+Create `cluster-issuer.yaml` (replace `your-email@example.com` with your real email address):
 
 ```yaml
 apiVersion: cert-manager.io/v1
@@ -78,7 +76,7 @@ kubectl apply -f cluster-issuer.yaml
 
 ---
 
-### 4. Example Ingress Resource with Automatic SSL
+### 4. Example Ingress with Automatic SSL
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -111,6 +109,7 @@ spec:
 ---
 
 ### 📚 References
-* [Traefik Ingress Controller Documentation](https://doc.traefik.io/traefik/providers/kubernetes-ingress/)
+* [Traefik Ingress Controller Official Docs](https://doc.traefik.io/traefik/)
+* [Traefik Official Helm Chart Repository](https://github.com/traefik/traefik-helm-chart)
 * [cert-manager Official Documentation](https://cert-manager.io/docs/)
-* [Let's Encrypt ACME Configuration with cert-manager](https://cert-manager.io/docs/configuration/acme/)
+* [Let's Encrypt ACME with cert-manager](https://cert-manager.io/docs/configuration/acme/)
