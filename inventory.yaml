@@ -1,0 +1,43 @@
+apiVersion: kubekey.kubesphere.io/v1
+kind: Inventory
+metadata:
+  name: default
+spec:
+  hosts:
+    master1:
+      connector:
+        type: local
+      internal_ipv4: 10.148.0.3
+    master2:
+      connector:
+        type: ssh
+        host: 10.148.0.4
+        port: 22
+        user: alexkgm2412
+        private_key_path: /home/alexkgm2412/.ssh/id_rsa
+      internal_ipv4: 10.148.0.4
+    master3:
+      connector:
+        type: ssh
+        host: 10.148.0.5
+        port: 22
+        user: alexkgm2412
+        private_key_path: /home/alexkgm2412/.ssh/id_rsa
+      internal_ipv4: 10.148.0.5
+  groups:
+    k8s_cluster:
+      groups:
+        - kube_control_plane
+        - kube_worker
+    kube_control_plane:
+      hosts:
+        - master1
+        - master2
+        - master3
+    kube_worker:
+      hosts: []
+    etcd:
+      hosts:
+        - master1
+        - master2
+        - master3

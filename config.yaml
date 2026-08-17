@@ -1,0 +1,40 @@
+apiVersion: kubekey.kubesphere.io/v1
+kind: Config
+spec:
+  zone: ""
+  kubernetes:
+    kube_version: v1.34.3
+    helm_version: v3.18.5
+    sandbox_image:
+      tag: "3.10.1"
+    extra_args:
+      kubelet:
+        - --system-reserved=cpu=500m,memory=1Gi
+        - --kube-reserved=cpu=300m,memory=500Mi
+        - --eviction-hard=memory.available<500Mi,nodefs.available<10%
+    control_plane_endpoint:
+      type: local
+  etcd:
+    etcd_version: v3.6.5
+  cri:
+    container_manager: containerd
+    crictl_version: v1.34.0
+  cni:
+    type: cilium
+    multi_cni: none
+    cilium_version: 1.19.1
+  storage_class:
+    local:
+      enabled: false
+      default: false
+    nfs:
+      enabled: false
+  dns:
+    coredns:
+      image:
+        tag: v1.12.1
+    nodelocaldns:
+      enabled: true
+      image:
+        tag: 1.26.4
+  image_manifests: []

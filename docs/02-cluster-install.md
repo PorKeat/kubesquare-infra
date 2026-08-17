@@ -1,55 +1,64 @@
 # 02 - Cluster Installation (KubeKey v4)
 
-KubeKey can be executed from **Option A: Master1 Node** or **Option B: Your Local Machine (Mac/Linux)**.
+KubeKey v4 uses two dedicated files:
+1. **`inventory.yaml`**: Defines node IPs, SSH connections, and host role groups (`kube_control_plane`, `etcd`, `kube_worker`).
+2. **`config.yaml`**: Defines Kubernetes parameters, Cilium CNI, Containerd CRI, and resource reservations.
 
 ---
 
-### 1. Download KubeKey
-
-#### Option A: On `master1` (Linux)
-```bash
-curl -sfL https://get-kk.kubesphere.io | sh -
-chmod +x kk
-./kk version
-```
-
-#### Option B: On your Local Machine (Mac / Laptop)
-```bash
-curl -sfL https://get-kk.kubesphere.io | sh -
-chmod +x kk
-./kk version
-```
-
----
-
-### 2. Configuration (`config-sample.yaml`)
-
-Use the configuration below. 
-
-> 💡 **Tip for Local Laptop installs**: If running from your local machine, set `address` to the VM's **Public IP** (or private IP if on VPN) and `privateKeyPath` to your local SSH key (e.g., `~/.ssh/google_compute_engine` or `~/.ssh/id_rsa`).
+### 1. The Inventory (`inventory.yaml`)
 
 ```yaml
-apiVersion: kubekey.kubesphere.io/v1alpha2
-kind: Cluster
+apiVersion: kubekey.kubesphere.io/v1
+kind: Inventory
 metadata:
-  name: sample
+  name: default
 spec:
   hosts:
-    # Set address to internal IP (if run from master1/VPN) or External IP (if run from laptop)
-    - {name: master1, address: 10.148.0.3, internalAddress: 10.148.0.3, user: alexkgm2412, privateKeyPath: "~/.ssh/id_rsa"}
-    - {name: master2, address: 10.148.0.4, internalAddress: 10.148.0.4, user: alexkgm2412, privateKeyPath: "~/.ssh/id_rsa"}
-    - {name: master3, address: 10.148.0.5, internalAddress: 10.148.0.5, user: alexkgm2412, privateKeyPath: "~/.ssh/id_rsa"}
-  roleGroups:
+    master1:
+      connector:
+        type: local
+      internal_ipv4: 10.148.0.3
+    master2:
+      connector:
+        type: ssh
+        host: 10.148.0.4
+        port: 22
+        user: alexkgm2412
+        private_key_path: /home/alexkgm2412/.ssh/id_rsa
+      internal_ipv4: 10.148.0.4
+    master3:
+      connector:
+        type: ssh
+        host: 10.148.0.5
+        port: 22
+        user: alexkgm2412
+        private_key_path: /home/alexkgm2412/.ssh/id_rsa
+      internal_ipv4: 10.148.0.5
+  groups:
+    k8s_cluster:
+      groups:
+        - kube_control_plane
+        - kube_worker
+    kube_control_plane:
+      hosts:
+        - master1
+        - master2
+        - master3
+    kube_worker:
+      hosts: []
     etcd:
-      - master1
-      - master2
-      - master3
-    control-plane:
-      - master1
-      - master2
-      - master3
-    worker: []
+      hosts:
+        - master1
+        - master2
+        - master3
+```
+
 ---
+
+### 2. The Configuration (`config.yaml`)
+
+```yaml
 apiVersion: kubekey.kubesphere.io/v1
 kind: Config
 spec:
@@ -66,15 +75,9 @@ spec:
         - --kube-reserved=cpu=300m,memory=500Mi
         - --eviction-hard=memory.available<500Mi,nodefs.available<10%
     control_plane_endpoint:
-      type: kube-vip
-      kube_vip:
-        image:
-          tag: v0.7.2
+      type: local
   etcd:
     etcd_version: v3.6.5
-  image_registry:
-    type: ""
-    ha_vip: ""
   cri:
     container_manager: containerd
     crictl_version: v1.34.0
@@ -102,14 +105,14 @@ spec:
 
 ---
 
-### 3. Run Cluster Installation
+### 3. Run Cluster Installation (Run on `master1`)
 
 ```bash
-# Optional: Clean any previous incomplete install
-./kk delete cluster --config config-sample.yaml
+# 1. Clean previous single-node cluster
+./kk delete cluster -i inventory.yaml --config config.yaml
 
-# Launch 3-Node HA cluster installation
-./kk create cluster --config config-sample.yaml
+# 2. Launch the 3-node HA installation
+./kk create cluster -i inventory.yaml --config config.yaml
 ```
 
 ---
@@ -128,5 +131,5 @@ kubectl get pods -A
 
 ### 📚 References
 * [KubeKey Official Repository](https://github.com/kubesphere/kubekey)
-* [kube-vip HA Architecture](https://kube-vip.io/docs/about/architecture/)
+* [Cilium Installation via KubeKey](https://docs.cilium.io/en/stable/installation/k8s-install-helm/)
 * [Kubernetes Resource Reservation Guide](https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/)
