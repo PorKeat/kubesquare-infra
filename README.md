@@ -14,7 +14,7 @@ Welcome to the **Kubesquare** HA Kubernetes Cluster Documentation. This reposito
 * **HA Endpoint & VIP Provider**: [kube-vip](https://kube-vip.io/)
 * **Container Network Interface (CNI)**: [Cilium (eBPF-based)](https://cilium.io/)
 * **Container Runtime (CRI)**: [containerd](https://containerd.io/)
-* **Distributed Block Storage (CSI)**: [Longhorn (CNCF)](https://longhorn.io/)
+* **Distributed Block Storage (CSI)**: [Longhorn v1.12.1 (CNCF)](https://longhorn.io/)
 * **Ingress Controller**: [Traefik Ingress](https://doc.traefik.io/traefik/providers/kubernetes-ingress/)
 * **Automated TLS / SSL**: [cert-manager & Let's Encrypt](https://cert-manager.io/docs/)
 * **Resource Optimization**: [Kubernetes Kubelet Resource Reservation](https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/) (~20% reserved)
@@ -47,6 +47,8 @@ Welcome to the **Kubesquare** HA Kubernetes Cluster Documentation. This reposito
    * Traefik Helm chart installation, `cert-manager` setup, and Let's Encrypt `ClusterIssuer` definition.
 5. [**05 - Network Security (Cilium eBPF Policies)**](file:///Users/alexkgm/Kubesquare/docs/05-network-security-cilium.md)
    * Multi-tenancy namespace isolation rules and Cilium network policies.
+6. [**06 - Understanding Cilium & eBPF (Simple Guide)**](file:///Users/alexkgm/Kubesquare/docs/06-cilium-ebpf-guide.md)
+   * Plain English overview of how Cilium works, eBPF benefits, and core features.
 
 ---
 
