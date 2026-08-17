@@ -1,12 +1,24 @@
 # 02 - Cluster Installation (KubeKey v4)
 
-KubeKey v4 uses two dedicated files:
-1. **`inventory.yaml`**: Defines node IPs, SSH connections, and host role groups (`kube_control_plane`, `etcd`, `kube_worker`).
-2. **`config.yaml`**: Defines Kubernetes parameters, Cilium CNI, Containerd CRI, and resource reservations.
+KubeKey v4 separates cluster definitions into two dedicated manifests:
+* **`inventory.yaml`**: Host network connections (`connector.type: local` vs `connector.type: ssh`), IP addresses, and group mappings (`kube_control_plane`, `etcd`, `kube_worker`).
+* **`config.yaml`**: Kubernetes version, Cilium CNI (eBPF), Containerd runtime, and compute resource reservations.
 
 ---
 
-### 1. The Inventory (`inventory.yaml`)
+### 1. Download KubeKey on `master1` (`10.148.0.3`)
+
+```bash
+curl -sfL https://get-kk.kubesphere.io | sh -
+chmod +x kk
+./kk version
+```
+
+---
+
+### 2. The Inventory Configuration (`inventory.yaml`)
+
+Create `inventory.yaml` on `master1`:
 
 ```yaml
 apiVersion: kubekey.kubesphere.io/v1
@@ -46,7 +58,10 @@ spec:
         - master2
         - master3
     kube_worker:
-      hosts: []
+      hosts:
+        - master1
+        - master2
+        - master3
     etcd:
       hosts:
         - master1
@@ -56,7 +71,9 @@ spec:
 
 ---
 
-### 2. The Configuration (`config.yaml`)
+### 3. The Cluster Parameters (`config.yaml`)
+
+Create `config.yaml` on `master1`:
 
 ```yaml
 apiVersion: kubekey.kubesphere.io/v1
@@ -105,31 +122,42 @@ spec:
 
 ---
 
-### 3. Run Cluster Installation (Run on `master1`)
+### 4. Run Cluster Creation
+
+Execute cluster installation from `master1`:
 
 ```bash
-# 1. Clean previous single-node cluster
-./kk delete cluster -i inventory.yaml --config config.yaml
-
-# 2. Launch the 3-node HA installation
 ./kk create cluster -i inventory.yaml --config config.yaml
 ```
 
 ---
 
-### 4. Verify Installation
+### 5. Cluster Teardown / Reset (If needed)
+
+To completely clean and reset the cluster nodes:
 
 ```bash
-# Verify all 3 master nodes are Ready
+./kk delete cluster -i inventory.yaml --config config.yaml
+```
+
+---
+
+### 6. Verify Installation
+
+```bash
+# Check all 3 master nodes are in Ready status
 kubectl get nodes -o wide
 
-# Check all running pods
+# Check system and Cilium eBPF pods
 kubectl get pods -A
+
+# Check etcd cluster health
+kubectl get pods -n kube-system -o wide | grep etcd
 ```
 
 ---
 
 ### 📚 References
-* [KubeKey Official Repository](https://github.com/kubesphere/kubekey)
+* [KubeKey Official Repository & Docs](https://github.com/kubesphere/kubekey)
 * [Cilium Installation via KubeKey](https://docs.cilium.io/en/stable/installation/k8s-install-helm/)
 * [Kubernetes Resource Reservation Guide](https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/)
