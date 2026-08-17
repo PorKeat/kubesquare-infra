@@ -1,6 +1,6 @@
 # 06 - Understanding Cilium & eBPF (Simple Guide)
 
-This guide explains what **Cilium** does in your Kubesquare cluster in simple, plain English.
+This guide explains what **Cilium** does in your Kubesquare cluster and how to access its graphical **Hubble Dashboard** in plain English.
 
 ---
 
@@ -16,6 +16,22 @@ Think of Cilium as two things combined:
 
 * **Old way (iptables)**: Linux had to check a long list of rules line-by-line for every single data packet. When you had thousands of pods, it became slow.
 * **Cilium way (eBPF)**: Cilium runs tiny, safe programs directly inside the Linux Kernel (the core of the operating system). It routes traffic instantly with almost zero CPU overhead and ultra-low latency.
+
+---
+
+## 🖥️ How to Access the Cilium (Hubble) Web Dashboard
+
+Cilium comes with a built-in graphical dashboard called **Hubble UI** that lets you visually see your network traffic, microservice connections, and blocked packets.
+
+### Step 1: Start Port Forwarding (Run on `master1` or Local Laptop)
+
+```bash
+kubectl port-forward -n kube-system svc/hubble-ui 12000:80 --address 0.0.0.0
+```
+
+### Step 2: Open in Browser
+
+Open `http://34.21.251.93:12000` (or `http://localhost:12000`) in your web browser.
 
 ---
 
@@ -60,5 +76,5 @@ kubectl get ciliumnetworkpolicies -A
 
 ## 📚 Official References
 * [Cilium Official Documentation](https://docs.cilium.io/en/stable/)
+* [Hubble UI Official Documentation](https://docs.cilium.io/en/stable/observability/hubble/hubble-ui/)
 * [What is eBPF? (Official Guide)](https://ebpf.io/what-is-ebpf/)
-* [Cilium Network Policy Guide](https://docs.cilium.io/en/stable/security/policy/)
