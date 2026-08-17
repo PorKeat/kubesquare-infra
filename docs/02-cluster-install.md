@@ -16,9 +16,19 @@ chmod +x kk
 
 ---
 
-### 2. Prepare Configuration (`config-sample.yaml`)
+### 2. Reset / Clean Previous Incomplete Cluster (If needed)
 
-Create or update `config-sample.yaml` on `master1` with line-by-line configuration comments:
+If an installation was previously run on a single node:
+
+```bash
+./kk delete cluster -f config-sample.yaml --force
+```
+
+---
+
+### 3. Prepare Configuration (`config-sample.yaml`)
+
+Ensure `config-sample.yaml` on `master1` uses `privateKeyPath: "~/.ssh/id_rsa"` for SSH key authentication:
 
 ```yaml
 apiVersion: kubekey.kubesphere.io/v1alpha2
@@ -27,12 +37,12 @@ metadata:
   name: sample
 spec:
   hosts:
-    # Master node 1 host definition (IP, internal IP, SSH username, and password)
-    - {name: master1, address: 10.148.0.3, internalAddress: 10.148.0.3, user: alexkgm2412, password: "1234"}
-    # Master node 2 host definition (IP, internal IP, SSH username, and password)
-    - {name: master2, address: 10.148.0.4, internalAddress: 10.148.0.4, user: alexkgm2412, password: "1234"}
-    # Master node 3 host definition (IP, internal IP, SSH username, and password)
-    - {name: master3, address: 10.148.0.5, internalAddress: 10.148.0.5, user: alexkgm2412, password: "1234"}
+    # Master node 1 host definition (IP, internal IP, SSH username, and privateKeyPath)
+    - {name: master1, address: 10.148.0.3, internalAddress: 10.148.0.3, user: alexkgm2412, privateKeyPath: "~/.ssh/id_rsa"}
+    # Master node 2 host definition (IP, internal IP, SSH username, and privateKeyPath)
+    - {name: master2, address: 10.148.0.4, internalAddress: 10.148.0.4, user: alexkgm2412, privateKeyPath: "~/.ssh/id_rsa"}
+    # Master node 3 host definition (IP, internal IP, SSH username, and privateKeyPath)
+    - {name: master3, address: 10.148.0.5, internalAddress: 10.148.0.5, user: alexkgm2412, privateKeyPath: "~/.ssh/id_rsa"}
   roleGroups:
     # Role assignment for etcd key-value datastore across all 3 nodes
     etcd:
@@ -107,7 +117,6 @@ spec:
     # NFS storage provisioner (disabled)
     nfs:
       enabled: false
-  # In-cluster DNS configuration
   dns:
     # CoreDNS cluster DNS deployment
     coredns:
@@ -124,7 +133,7 @@ spec:
 
 ---
 
-### 3. Run Cluster Creation
+### 4. Run Cluster Creation
 
 Execute cluster installation from `master1`:
 
@@ -134,16 +143,16 @@ Execute cluster installation from `master1`:
 
 ---
 
-### 4. Verify Installation
+### 5. Verify Installation
 
 ```bash
-# Verify all nodes are in Ready status as control-plane
-kubectl get nodes
+# Verify all 3 nodes are in Ready status as control-plane
+kubectl get nodes -o wide
 
 # Check all system and networking pods (Cilium, CoreDNS, kube-vip)
 kubectl get pods -A
 
-# Check etcd cluster health
+# Check etcd cluster health across 3 nodes
 kubectl get pods -n kube-system -o wide | grep etcd
 ```
 

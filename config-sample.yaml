@@ -4,12 +4,12 @@ metadata:
   name: sample
 spec:
   hosts:
-    # Master node 1 host definition (IP, internal IP, SSH username, and password)
-    - {name: master1, address: 10.148.0.3, internalAddress: 10.148.0.3, user: alexkgm2412, password: "1234"}
-    # Master node 2 host definition (IP, internal IP, SSH username, and password)
-    - {name: master2, address: 10.148.0.4, internalAddress: 10.148.0.4, user: alexkgm2412, password: "1234"}
-    # Master node 3 host definition (IP, internal IP, SSH username, and password)
-    - {name: master3, address: 10.148.0.5, internalAddress: 10.148.0.5, user: alexkgm2412, password: "1234"}
+    # Master node 1 host definition (IP, internal IP, SSH username, and privateKeyPath)
+    - {name: master1, address: 10.148.0.3, internalAddress: 10.148.0.3, user: alexkgm2412, privateKeyPath: "~/.ssh/id_rsa"}
+    # Master node 2 host definition (IP, internal IP, SSH username, and privateKeyPath)
+    - {name: master2, address: 10.148.0.4, internalAddress: 10.148.0.4, user: alexkgm2412, privateKeyPath: "~/.ssh/id_rsa"}
+    # Master node 3 host definition (IP, internal IP, SSH username, and privateKeyPath)
+    - {name: master3, address: 10.148.0.5, internalAddress: 10.148.0.5, user: alexkgm2412, privateKeyPath: "~/.ssh/id_rsa"}
   roleGroups:
     # Role assignment for etcd key-value datastore across all 3 nodes
     etcd:
@@ -84,7 +84,6 @@ spec:
     # NFS storage provisioner (disabled)
     nfs:
       enabled: false
-  # In-cluster DNS configuration
   dns:
     # CoreDNS cluster DNS deployment
     coredns:

@@ -4,7 +4,37 @@ Run these commands on all 3 VMs (`10.148.0.3`, `10.148.0.4`, and `10.148.0.5`) b
 
 ---
 
-### 1. Disable Swap (Required by Kubernetes)
+### 1. SSH Key Exchange (Crucial for Multi-Node / Cloud VMs)
+
+Cloud VMs (GCP, AWS) disable SSH password authentication by default. Passwordless SSH key authentication from `master1` to all nodes is **mandatory** for KubeKey.
+
+#### Step 1: Generate SSH Key on `master1` (`10.148.0.3`)
+```bash
+ssh-keygen -t rsa -b 4096 -N "" -f ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub
+```
+*(Copy the generated public key)*
+
+#### Step 2: Add Public Key to `master1`, `master2`, and `master3`
+Run on **each** VM:
+```bash
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+echo "<PASTE_COPIED_PUBLIC_KEY_HERE>" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+```
+
+#### Step 3: Verify SSH Access from `master1`
+Run from `master1` to verify passwordless connection and sudo access:
+```bash
+ssh -i ~/.ssh/id_rsa alexkgm2412@10.148.0.3 "sudo whoami"
+ssh -i ~/.ssh/id_rsa alexkgm2412@10.148.0.4 "sudo whoami"
+ssh -i ~/.ssh/id_rsa alexkgm2412@10.148.0.5 "sudo whoami"
+```
+*(Each command must output `root` without asking for a password).*
+
+---
+
+### 2. Disable Swap (Required by Kubernetes)
 According to the [Kubernetes Production Environment Requirements](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#before-you-begin), swap must be disabled to ensure kubelet memory allocation guarantees.
 
 ```bash
@@ -14,7 +44,7 @@ sudo sed -ri '/\sswap\s/s/^#?/#/' /etc/fstab
 
 ---
 
-### 2. Install Required Packages
+### 3. Install Required Packages
 Installs dependencies required by Kubernetes, Cilium eBPF, and [Longhorn OS Requirements](https://longhorn.io/docs/latest/deploy/install/):
 
 ```bash
@@ -28,7 +58,7 @@ sudo systemctl enable --now iscsid
 
 ---
 
-### 3. Load Kernel Modules & Configure Sysctl
+### 4. Load Kernel Modules & Configure Sysctl
 Required for [Cilium System Requirements](https://docs.cilium.io/en/stable/operations/system_requirements/) and [Kubernetes Container Runtimes](https://kubernetes.io/docs/setup/production-environment/container-runtimes/):
 
 ```bash
@@ -50,15 +80,6 @@ net.bridge.bridge-nf-call-ip6tables = 1
 EOF
 
 sudo sysctl --system
-```
-
----
-
-### 4. Verify Sudo Permissions
-Ensure the deployment user has non-interactive or working sudo privileges:
-```bash
-sudo whoami
-# Output must be: root
 ```
 
 ---
