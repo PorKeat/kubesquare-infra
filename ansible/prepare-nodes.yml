@@ -1,0 +1,60 @@
+---
+- name: Prepare Kubesquare Kubernetes HA Nodes
+  hosts: all
+  become: yes
+  tasks:
+    - name: Disable swap immediately
+      command: swapoff -a
+
+    - name: Disable swap in /etc/fstab
+      replace:
+        path: /etc/fstab
+        regexp: '^([^#].*\s+swap\s+.*)$'
+        replace: '# \1'
+
+    - name: Install prerequisite packages for K8s and Longhorn
+      apt:
+        name:
+          - socat
+          - conntrack
+          - ipset
+          - curl
+          - openssl
+          - open-iscsi
+          - nfs-common
+          - cryptsetup
+        state: present
+        update_cache: yes
+
+    - name: Ensure iscsid service is running and enabled
+      systemd:
+        name: iscsid
+        state: started
+        enabled: yes
+
+    - name: Load kernel modules for container networking & eBPF
+      modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - overlay
+        - br_netfilter
+
+    - name: Persist kernel modules across reboots
+      copy:
+        dest: /etc/modules-load.d/k8s.conf
+        content: |
+          overlay
+          br_netfilter
+
+    - name: Configure sysctl parameters for K8s networking
+      sysctl:
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+        reload: yes
+        sysctl_file: /etc/sysctl.d/99-kubernetes-cri.conf
+      loop:
+        - { key: "net.bridge.bridge-nf-call-iptables", value: "1" }
+        - { key: "net.ipv4.ip_forward", value: "1" }
+        - { key: "net.bridge.bridge-nf-call-ip6tables", value: "1" }
