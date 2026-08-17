@@ -13,11 +13,11 @@ According to the [Longhorn Official Helm Installation Guide](https://longhorn.io
 helm repo add longhorn https://charts.longhorn.io
 helm repo update
 
-# Install Longhorn into dedicated namespace
+# Install Longhorn (version 1.12.1) in the longhorn-system namespace
 helm install longhorn longhorn/longhorn \
   --namespace longhorn-system \
   --create-namespace \
-  --set defaultSettings.defaultDataPath="/var/lib/longhorn"
+  --version 1.12.1
 ```
 
 ---
