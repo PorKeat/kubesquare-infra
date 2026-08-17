@@ -1,16 +1,17 @@
-# 📖 Complete Kubernetes HA, Cilium & KubeSphere Manual Setup Guide
+# Kubesquare: Kubernetes HA, Cilium and KubeSphere Setup Guide
 
-A complete, human-readable learning and reference manual designed for manual step-by-step setup, understanding each component, and future deployments.
+A complete, clean manual setup and reference guide for deploying a high-availability Kubernetes cluster with Cilium eBPF and KubeSphere.
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 1. [Architecture Overview](#1-architecture-overview)
-2. [Step 1: Linux Node Preparation (All Nodes)](#step-1-linux-node-preparation-all-nodes)
-3. [Step 2: Kubernetes HA Cluster via KubeKey v4](#step-2-kubernetes-ha-cluster-via-kubekey-v4)
-4. [Step 3: Cilium eBPF CNI & Hubble Dashboard](#step-3-cilium-ebpf-cni--hubble-dashboard)
-5. [Step 4: KubeSphere v4 Enterprise Dashboard](#step-4-kubesphere-v4-enterprise-dashboard)
-6. [Essential Verification & Diagnostic Commands](#essential-verification--diagnostic-commands)
+2. [Step 1: Node Preparation (All Nodes)](#step-1-node-preparation-all-nodes)
+3. [Step 2: Install Kubernetes and KubeSphere (Single Command)](#step-2-install-kubernetes-and-kubesphere-single-command)
+4. [Step 3: Cilium eBPF Network and Hubble Dashboard](#step-3-cilium-ebpf-network-and-hubble-dashboard)
+5. [Step 4: Accessing KubeSphere Web Console](#step-4-accessing-kubesphere-web-console)
+6. [Essential Verification Commands](#essential-verification-commands)
+7. [Cluster Teardown / Reset](#cluster-teardown--reset)
 
 ---
 
@@ -44,39 +45,28 @@ A complete, human-readable learning and reference manual designed for manual ste
 
 ---
 
-## Step 1: Linux Node Preparation (All Nodes)
+## Step 1: Node Preparation (All Nodes)
 
-> **Where to run**: Run these commands on **every node** (`master1`, `master2`, `master3`).
+Run these commands on every server (`master1`, `master2`, `master3`).
 
 ### 1.1 Disable Swap Memory
-Kubernetes memory management requires Linux swap memory to be completely disabled.
-
 ```bash
-# Disable swap immediately
 sudo swapoff -a
-
-# Persist swap disable across reboots
 sudo sed -i '/swap/s/^/#/' /etc/fstab
 ```
 
 ### 1.2 Enable Linux Kernel Modules
-Kubernetes and container runtimes (containerd) require the `overlay` filesystem and `br_netfilter` kernel modules.
-
 ```bash
-# Load kernel modules into current session
 sudo modprobe overlay
 sudo modprobe br_netfilter
 
-# Persist modules across system reboots
 cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
 overlay
 br_netfilter
 EOF
 ```
 
-### 1.3 Configure Sysctl Networking Parameters
-Enable IP packet forwarding and bridge netfilter inspection:
-
+### 1.3 Configure Sysctl Parameters
 ```bash
 cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
 net.bridge.bridge-nf-call-iptables  = 1
@@ -84,7 +74,6 @@ net.bridge.bridge-nf-call-ip6tables = 1
 net.ipv4.ip_forward                 = 1
 EOF
 
-# Apply sysctl settings immediately
 sudo sysctl --system
 ```
 
@@ -96,18 +85,18 @@ sudo apt install -y socat conntrack ipset curl openssl
 
 ---
 
-## Step 2: Kubernetes HA Cluster via KubeKey v4
+## Step 2: Install Kubernetes and KubeSphere (Single Command)
 
-> **Where to run**: Run these steps **only on `master1`** (`10.148.0.3`).
+Run these steps only on `master1` (`10.148.0.3`).
 
-### 2.1 Download KubeKey Binary
+### 2.1 Download KubeKey
 ```bash
 curl -sfL https://get-kk.kubesphere.io | sh -
 chmod +x kk
 ```
 
-### 2.2 Define Your Inventory (`inventory.yaml`)
-Create `inventory.yaml` to specify your servers and SSH access:
+### 2.2 Define Inventory File (`inventory.yaml`)
+Create `inventory.yaml`:
 
 ```yaml
 apiVersion: kubekey.kubesphere.io/v1
@@ -158,8 +147,8 @@ spec:
         - master3
 ```
 
-### 2.3 Define Cluster Settings (`config.yaml`)
-Create `config.yaml` with your Kubernetes version and resource reservation:
+### 2.3 Define Cluster Configuration (`config.yaml`)
+Create `config.yaml`:
 
 ```yaml
 apiVersion: kubekey.kubesphere.io/v1
@@ -189,20 +178,16 @@ spec:
     cilium_version: 1.19.1
 ```
 
-### 2.4 Execute Cluster Creation
+### 2.4 Run Installation with KubeSphere
 ```bash
-./kk create cluster -i inventory.yaml --config config.yaml
+./kk create cluster -i inventory.yaml --config config.yaml --with-kubesphere
 ```
 
 ---
 
-## Step 3: Cilium eBPF CNI & Hubble Dashboard
+## Step 3: Cilium eBPF Network and Hubble Dashboard
 
-> **Where to run**: Run on `master1`.
-
-Cilium manages pod IP addresses, high-speed packet routing, and network security policies directly in the Linux kernel via eBPF.
-
-### 3.1 Install Cilium via Helm
+### 3.1 Install Cilium and Enable Hubble UI
 ```bash
 helm repo add cilium https://helm.cilium.io/
 helm repo update
@@ -221,70 +206,43 @@ helm install cilium cilium/cilium --version 1.16.1 \
 ```bash
 kubectl port-forward -n kube-system svc/hubble-ui 12000:80 --address 0.0.0.0
 ```
-* **URL**: `http://<YOUR_MASTER1_IP>:12000` (or `http://localhost:12000`)
+URL: `http://<MASTER1_IP>:12000` (or `http://localhost:12000`)
 
 ---
 
-## Step 4: KubeSphere v4 Enterprise Dashboard
+## Step 4: Accessing KubeSphere Web Console
 
-> **Where to run**: Run on `master1`.
+### 4.1 Access Options
+* Direct Web URL: `http://<MASTER1_IP>:30880`
+* Local SSH Tunnel: `ssh -L 30880:127.0.0.1:30880 master1` then open `http://localhost:30880`
 
-KubeSphere provides a web console for visual cluster management, workload deployment, logs, and multi-tenant workspaces.
-
-### 4.1 Install KubeSphere Core v4
-```bash
-helm upgrade --install -n kubesphere-system --create-namespace \
-  ks-core oci://hub.kubesphere.com.cn/kse/ks-core
-```
-
-### 4.2 Grant Required RBAC Role Binding
-```bash
-cat << 'EOF' | kubectl apply -f -
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: ks-apiserver-admin
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: ks-apiserver
-  namespace: kubesphere-system
-EOF
-```
-
-### 4.3 Access KubeSphere Console
-* **Direct Web URL**: `http://<YOUR_MASTER1_IP>:30880`
-* **Local SSH Tunnel**: `ssh -L 30880:127.0.0.1:30880 master1` ➡️ Open `http://localhost:30880`
-* **Default Login**:
-  * **Username**: `admin`
-  * **Password**: `P@88w0rd`
+### 4.2 Default Credentials
+* Username: `admin`
+* Password: `P@88w0rd`
 
 ---
 
-## Essential Verification & Diagnostic Commands
+## Essential Verification Commands
 
 ```bash
-# 1. Verify all 3 master nodes are in 'Ready' status
+# Verify all 3 master nodes are Ready
 kubectl get nodes -o wide
 
-# 2. Check all cluster pods across namespaces
+# Check all running pods across namespaces
 kubectl get pods -A
 
-# 3. Check Cilium health & eBPF maps
+# Check Cilium network health and eBPF status
 kubectl -n kube-system exec -ti ds/cilium -- cilium status
 
-# 4. Check KubeSphere backend components
+# Check KubeSphere pods
 kubectl get pods -n kubesphere-system
 ```
 
 ---
 
-## 🧹 Cluster Reset / Teardown (When you want to start fresh)
+## Cluster Teardown / Reset
 
-To completely wipe and clean the cluster nodes:
+To wipe and reset the cluster nodes:
 
 ```bash
 ./kk delete cluster -i inventory.yaml --config config.yaml
